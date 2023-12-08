@@ -53,18 +53,16 @@ class Brew(dotbot.Plugin):
         return self._directives[directive](data, defaults)
 
     def _invoke_shell_command(self, cmd: str, defaults: Mapping[str, Any]) -> int:
-        with open(os.devnull, "w") as devnull:
-            if defaults["force_intel"]:
-                cmd = "arch --x86_64 " + cmd
-
-            return subprocess.call(
-                cmd,
-                shell=True,
-                cwd=self._context.base_directory(),
-                stdin=devnull if defaults["stdin"] else None,
-                stdout=devnull if defaults["stdout"] else None,
-                stderr=devnull if defaults["stderr"] else None,
-            )
+        if getattr(defaults, "force_intel", False):
+            cmd = "arch --x86_64 " + cmd
+        return subprocess.call(
+            cmd,
+            shell=True,
+            cwd=self._context.base_directory(),
+            stdin=None,
+            stdout=None,
+            stderr=None,
+        )
 
     def _tap(self, tap_list, defaults) -> bool:
         result: bool = True
@@ -155,7 +153,7 @@ class Brew(dotbot.Plugin):
                 install_format.format(pkg=pkg), defaults
             )
             if 0 != result:
-                self._log.warning("Failed to install [{pkg}]")
+                self._log.warning(f"Failed to install [{pkg}]")
 
             return 0 == result
 
