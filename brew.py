@@ -84,6 +84,7 @@ class Brew(dotbot.Plugin):
             run = self._install(
                 "brew install {pkg}",
                 "test -d /usr/local/Cellar/{pkg_name} "
+                + "|| test -d /opt/homebrew/Cellar/{pkg_name}"
                 + "|| brew ls --versions {pkg_name}",
                 pkg,
                 defaults,
@@ -104,6 +105,7 @@ class Brew(dotbot.Plugin):
             run = self._install(
                 "brew install --cask {pkg}",
                 "test -d /usr/local/Caskroom/{pkg_name} "
+                + "|| test -d /opt/homebrew/Caskroom/{pkg_name}"
                 + "|| brew ls --cask --versions {pkg_name}",
                 pkg,
                 defaults,
