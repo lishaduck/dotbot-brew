@@ -22,6 +22,12 @@ class Brew(dotbot.Plugin):
             "brewfile": self._brewfile,
         }
         self._defaults = {
+            "tap": {
+                "stdin": False,
+                "stderr": False,
+                "stdout": False,
+                "force_intel": False,
+            },
             "brew": {
                 "stdin": False,
                 "stderr": False,
@@ -40,6 +46,12 @@ class Brew(dotbot.Plugin):
                 "stdout": True,
                 "force_intel": False,
             },
+            "install-brew": {
+                "stdin": True,
+                "stderr": True,
+                "stdout": True,
+                "force_intel": False,
+            },
         }
         super().__init__(*args, **kwargs)
 
@@ -53,16 +65,18 @@ class Brew(dotbot.Plugin):
         return self._directives[directive](data, defaults)
 
     def _invoke_shell_command(self, cmd: str, defaults: Mapping[str, Any]) -> int:
-        if getattr(defaults, "force_intel", False):
-            cmd = "arch --x86_64 " + cmd
-        return subprocess.call(
-            cmd,
-            shell=True,
-            cwd=self._context.base_directory(),
-            stdin=None,
-            stdout=None,
-            stderr=None,
-        )
+        with open(os.devnull, "w") as devnull:
+            if defaults["force_intel"]:
+                cmd = "arch --x86_64 " + cmd
+
+            return subprocess.call(
+                cmd,
+                shell=True,
+                cwd=self._context.base_directory(),
+                stdin=True if defaults["stdin"] else devnull,
+                stdout=True if defaults["stdout"] else devnull,
+                stderr=True if defaults["stderr"] else devnull,
+            )
 
     def _tap(self, tap_list, defaults) -> bool:
         result: bool = True
@@ -84,7 +98,7 @@ class Brew(dotbot.Plugin):
             run = self._install(
                 "brew install {pkg}",
                 "test -d /usr/local/Cellar/{pkg_name} "
-                + "|| test -d /opt/homebrew/Cellar/{pkg_name}"
+                + "|| test -d /opt/homebrew/Cellar/{pkg_name} "
                 + "|| brew ls --versions {pkg_name}",
                 pkg,
                 defaults,
@@ -105,7 +119,7 @@ class Brew(dotbot.Plugin):
             run = self._install(
                 "brew install --cask {pkg}",
                 "test -d /usr/local/Caskroom/{pkg_name} "
-                + "|| test -d /opt/homebrew/Caskroom/{pkg_name}"
+                + "|| test -d /opt/homebrew/Caskroom/{pkg_name} "
                 + "|| brew ls --cask --versions {pkg_name}",
                 pkg,
                 defaults,
